@@ -13,13 +13,13 @@ dependencies:
     sdk: flutter
 
   eni_svc:
-    hosted: https://gitea.eniware-systems.de/api/packages/eni-flutter/pub
+    hosted: https://github.com/eniware-systems/eni_svc
     version: ^2.0.4
   eni_utils:
-    hosted: https://gitea.eniware-systems.de/api/packages/eni-flutter/pub
+    hosted: https://github.com/eniware-systems/eni_utils
     version: ^2.0.1
   eni_config:
-    hosted: https://gitea.eniware-systems.de/api/packages/eni-flutter/pub
+    hosted: https://github.com/eniware-systems/eni_config
     version: ^2.0.3
   
   oauth2: ^2.0.2
