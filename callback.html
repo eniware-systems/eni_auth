@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<title>Authentication complete</title>
+<p style="font-family: sans-serif">Authentication is complete, you will be redirected. If this does not happen automatically, you may close this
+    window now.</p>
+<script>
+    function postMessage() {
+        const messageId = 'eni-auth';
+
+        if (BroadcastChannel) {
+            const channel = new BroadcastChannel(messageId);
+            channel.postMessage(window.location.href);
+            return true;
+        } else if (window.opener) {
+            // Use a fallback approach in case BroadcastChannel is not supported
+            window.opener.postMessage(messageId + "=" + window.location.href, window.location.origin);
+            return true;
+        } else {
+            console.error("This browser doesn't seem to like cross-tab-messaging")
+            window.close();
+            return false;
+        }
+    }
+
+    if (postMessage()) {
+        window.close();
+    }
+</script>
