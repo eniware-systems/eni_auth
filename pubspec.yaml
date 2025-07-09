@@ -12,18 +12,15 @@ dependencies:
   flutter:
     sdk: flutter
 
-  eni_config:
-    git:
-      url: git@github.com:eniware-systems/eni_config.git
-      ref: main
   eni_svc:
-    git:
-      url: git@github.com:eniware-systems/eni_svc.git
-      ref: main
+    hosted: https://github.com/eniware-systems/eni_svc
+    version: ^2.0.4
   eni_utils:
-    git:
-      url: git@github.com:eniware-systems/eni_utils.git
-      ref: main
+    hosted: https://github.com/eniware-systems/eni_utils
+    version: ^2.0.1
+  eni_config:
+    hosted: https://github.com/eniware-systems/eni_config
+    version: ^2.0.3
   
   oauth2: ^2.0.2
   url_launcher: ^6.2.6
