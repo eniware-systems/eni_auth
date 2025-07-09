@@ -1,8 +1,0 @@
-# melos_managed_dependency_overrides: eni_config,eni_svc,eni_utils
-dependency_overrides:
-  eni_config:
-    path: ../eni_config
-  eni_svc:
-    path: ../eni_svc
-  eni_utils:
-    path: ../eni_utils
