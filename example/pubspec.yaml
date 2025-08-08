@@ -1,0 +1,33 @@
+name: eni_auth_example
+description: Example application for the eni_auth package.
+version: 1.0.0+1
+publish_to: 'none'
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  eni_auth:
+    hosted: https://gitea.eniware-systems.de/api/packages/eni-flutter/pub
+    version: ^2.0.4
+  eni_config:
+    hosted: https://gitea.eniware-systems.de/api/packages/eni-flutter/pub
+    version: ^2.0.5
+  eni_svc:
+    hosted: https://gitea.eniware-systems.de/api/packages/eni-flutter/pub
+    version: ^2.0.6
+  eni_utils:
+    hosted: https://gitea.eniware-systems.de/api/packages/eni-flutter/pub
+    version: ^2.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.2
+
+flutter:
+  uses-material-design: true
