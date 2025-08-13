@@ -15,15 +15,15 @@ dependencies:
   eni_svc:
     git:
       url: https://github.com/eniware-systems/eni_svc.git
-      ref: main
+      ref: 2.0.6
   eni_utils:
     git:
       url: https://github.com/eniware-systems/eni_utils.git
-      ref: main
+      ref: 2.0.3
   eni_config:
     git:
       url: https://github.com/eniware-systems/eni_config.git
-      ref: main
+      ref: 2.0.5
   
   oauth2: ^2.0.3
   url_launcher: ^6.3.2
