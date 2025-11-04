@@ -69,34 +69,34 @@ packages:
     dependency: "direct main"
     description:
       name: eni_auth
-      sha256: c3fbeceda98e6bcbc7ae1d7fcbe9d4dba872ae9ed86a37854645c1d75185d180
+      sha256: fb161d2a0f9fe5339590715488c3651f253bdc37ecf031705b562ad52732182e
       url: "https://gitea.eniware-systems.de/api/packages/eni-flutter/pub/"
     source: hosted
-    version: "2.0.5"
+    version: "2.0.6"
   eni_config:
     dependency: "direct main"
     description:
       name: eni_config
-      sha256: be01c66113e326854ac6d22b0e22db6bf4990b7fe1905c6dc01cd350b8e26ddc
+      sha256: "3d7b30bc782ef16e2c5b779cbc9a1ea59db3fbf3e748c94be4cfa028c27e6adb"
       url: "https://gitea.eniware-systems.de/api/packages/eni-flutter/pub/"
     source: hosted
-    version: "2.0.6"
+    version: "2.0.7"
   eni_svc:
     dependency: "direct main"
     description:
       name: eni_svc
-      sha256: "37e7dfd4119f1b5df531de43d52aadaaeb44808e68799a8b89a38c95fee57ae7"
+      sha256: "8b92e6a29437f30b626ce6ae1e8d8ffb96036919ea74574c07e18c3cf77c7d18"
       url: "https://gitea.eniware-systems.de/api/packages/eni-flutter/pub/"
     source: hosted
-    version: "2.0.6"
+    version: "2.0.7"
   eni_utils:
     dependency: "direct main"
     description:
       name: eni_utils
-      sha256: "34d6115eb770ce79f37083a18ba58e1c168dd1197d6bb5f4272a96ba66c0dd5d"
+      sha256: "548abeca39df056a8da57333f958379422da297b5189c1b418d2746e2c241052"
       url: "https://gitea.eniware-systems.de/api/packages/eni-flutter/pub/"
     source: hosted
-    version: "2.0.3"
+    version: "2.0.4"
   fake_async:
     dependency: transitive
     description:
