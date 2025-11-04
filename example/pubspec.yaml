@@ -10,10 +10,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
+
   eni_auth:
     hosted: https://gitea.eniware-systems.de/api/packages/eni-flutter/pub
-    version: ^2.0.4
+    version: ^2.0.5
   eni_config:
     hosted: https://gitea.eniware-systems.de/api/packages/eni-flutter/pub
     version: ^2.0.5

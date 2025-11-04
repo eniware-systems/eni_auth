@@ -15,9 +15,74 @@ import 'package:flutter/material.dart';
 /// - How to use the AuthBuilder widget to build UI based on authentication state
 
 void main() {
-  // Initialize the application
-  runApp(const MyApp());
+  runApp(ServiceScope(
+    builder: (context, bootstrapLevel) {
+      // Only show the app when services are ready
+      if (bootstrapLevel != RunLevel.ready) {
+        return const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        );
+      }
+
+      return MaterialApp(
+        title: 'ENI Auth Example',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          useMaterial3: true,
+        ),
+        home: const AuthDemoScreen(title: 'ENI Auth Example'),
+      );
+    },
+  )
+    ..addAppConfig()
+    ..provide<ConfigProvider>(MemoryConfigProvider(config: config))
+    ..provide<Package>(
+      _AuthPackageProvider(
+        controller: authController,
+        autoConfigure: true,
+      ),
+    ));
 }
+
+// Configure the application with OAuth2 settings
+final config = {
+  'auth': {
+    'provider': 'oauth2',
+    'authorizationEndpoint': 'https://accounts.google.com/o/oauth2/v2/auth',
+    'tokenEndpoint': 'https://oauth2.googleapis.com/token',
+    'clientId': '<YOUR_CLIENT_ID>',
+    'clientSecret': '<YOUT_CLIENT_SECRET>',
+    'scopes': ['openid', 'profile', 'email'],
+    'platform': {
+      //overwrites default values from default_config.dart (mostly not necessary):
+      //'web': {'redirect_url': '/login/oidc/callback'},
+      //'io':  {'redirect_url': 'http://localhost:9004/login/oidc/callback'}
+    }
+  }
+};
+
+// Create an auth controller that knows how to create MyUser objects
+final authController = () {
+  final logger = loggerFor('AuthController');
+
+  return AuthController<MyUser, BuildContext>(
+    onCreateUser: MyUser.fromOAuth2,
+    onLogin: (user) {
+      logger.i('User logged in: $user');
+    },
+    onLogout: (user) {
+      logger.i('User logged out: $user');
+    },
+    onGrantResource: (user, resource) {
+      // Custom resource access control
+      return true;
+    },
+  );
+}();
 
 /// A custom user class that extends AuthUser.
 ///
@@ -27,12 +92,13 @@ class MyUser extends AuthUser {
   final String id;
   final String name;
   final String email;
+  final String accessToken;
 
-  MyUser({
-    required this.id,
-    required this.name,
-    required this.email,
-  });
+  MyUser(
+      {required this.id,
+      required this.name,
+      required this.email,
+      required this.accessToken});
 
   /// Factory method to create a MyUser from OAuth2 parameters.
   ///
@@ -40,14 +106,15 @@ class MyUser extends AuthUser {
   /// The params map contains the user information from the OAuth2 provider.
   factory MyUser.fromOAuth2(Map<String, dynamic> params) {
     return MyUser(
-      id: params['sub'] ?? '',
-      name: params['name'] ?? '',
-      email: params['email'] ?? '',
-    );
+        id: params['sub'] ?? '',
+        name: params['name'] ?? '',
+        email: params['email'] ?? '',
+        accessToken: params['accessToken'] ?? '');
   }
 
   @override
-  String toString() => 'MyUser(id: $id, name: $name, email: $email)';
+  String toString() => 'MyUser '
+      '(id: $id, name: $name, email: $email, accessToken: $accessToken)';
 }
 
 class MyApp extends StatefulWidget {
@@ -58,73 +125,16 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // Create a logger instance for this class
-  final Logger _logger = loggerFor('MyApp');
-
   @override
   Widget build(BuildContext context) {
-    // Configure the application with OAuth2 settings
-    final config = {
-      'auth': {
-        'provider': 'dummy', // Using DummyAuthProvider for simplicity
-        'authorizationEndpoint':
-            'https://your-auth-server.com/oauth2/authorize',
-        'tokenEndpoint': 'https://your-auth-server.com/oauth2/token',
-        'clientId': 'your-client-id',
-        'clientSecret': 'your-client-secret',
-        'scopes': ['openid', 'profile', 'email'],
-        'platform': {
-          'web': {'redirect_url': '/login/oidc/callback'},
-          'io': {'redirect_url': 'http://localhost:9004/login/oidc/callback'}
-        }
-      }
-    };
-
-    // Create an auth controller that knows how to create MyUser objects
-    final authController = AuthController<MyUser, BuildContext>(
-      onCreateUser: MyUser.fromOAuth2,
-      onLogin: (user) {
-        _logger.i('User logged in: $user');
-      },
-      onLogout: (user) {
-        _logger.i('User logged out: $user');
-      },
-      onGrantResource: (user, resource) {
-        // You can implement custom resource access control here
-        return true; // Allow access to all resources
-      },
+    return MaterialApp(
+      title: 'ENI Auth Example',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+      ),
+      home: const AuthDemoScreen(title: 'ENI Auth Example'),
     );
-
-    return ServiceScope(
-      builder: (context, bootstrapLevel) {
-        // Only show the app when services are ready
-        if (bootstrapLevel != RunLevel.ready) {
-          return const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          );
-        }
-
-        return MaterialApp(
-          title: 'ENI Auth Example',
-          theme: ThemeData(
-            primarySwatch: Colors.blue,
-            useMaterial3: true,
-          ),
-          home: const MyHomePage(title: 'ENI Auth Example'),
-        );
-      },
-    )
-      ..provide<ConfigProvider>(MemoryConfigProvider(config: config))
-      ..provide<Package>(
-        _AuthPackageProvider(
-          controller: authController,
-          autoConfigure: true,
-        ),
-      );
   }
 }
 
@@ -147,20 +157,20 @@ class _AuthPackageProvider extends Package {
   String get name => "eni_auth_example";
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class AuthDemoScreen extends StatefulWidget {
+  const AuthDemoScreen({super.key, required this.title});
 
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<AuthDemoScreen> createState() => _AuthDemoScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _AuthDemoScreenState extends State<AuthDemoScreen> {
   bool _isLoading = false;
 
   // Create a logger instance for this class
-  final Logger _logger = loggerFor('MyHomePage');
+  final Logger _logger = loggerFor('AuthDemoScreen');
 
   /// Handle the login button press.
   ///

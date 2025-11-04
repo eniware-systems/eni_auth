@@ -1,3 +1,7 @@
+## 2.0.5
+
+- read defaultScopes from AppConfig
+
 
 ## 2.0.4
 

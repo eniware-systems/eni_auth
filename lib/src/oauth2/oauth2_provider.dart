@@ -182,9 +182,9 @@ class OAuth2Provider<TUser extends AuthUser, TResource>
   /// If not provided, [defaultScopes] is used.
   OAuth2Provider(
       {OAuth2CredentialsStore? credentialsStore,
-      List<String> scopes = defaultScopes})
+      List<String>? scopes = defaultScopes})
       : _credentialsStore = credentialsStore ?? OAuth2SecureCredentialsStore(),
-        _scopes = scopes;
+        _scopes = scopes ?? [];
 
   /// Creates a [ServiceDescriptor] for registering this provider with the service registry.
   ///
@@ -282,8 +282,6 @@ class OAuth2Provider<TUser extends AuthUser, TResource>
 
     _state = OAuth2LoginState.inLoginProcess;
 
-    final config = <String, dynamic>{}; // TODO
-
     final grant = oauth2.AuthorizationCodeGrant(
         _clientId, _authorizationEndpoint, _tokenEndpoint,
         secret: _clientSecret);
@@ -292,7 +290,7 @@ class OAuth2Provider<TUser extends AuthUser, TResource>
       if (existingCredentials == null) {
         _logger.i("Starting authorization flow");
         final op = loginFlow(
-            config: config,
+            config: appConfig.all,
             logger: _logger,
             grant: grant,
             scopes: _scopes,

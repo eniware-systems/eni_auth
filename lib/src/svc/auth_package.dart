@@ -20,6 +20,7 @@ class _AuthPackage<TUser extends AuthUser, TResource, TLoginFlowListener>
     if (autoConfigure) {
       final provider =
           appConfig.getOrNull<String>("auth.provider")?.toLowerCase();
+      final scopes = appConfig.getOrNull<List<String>>("auth.scopes");
 
       if (provider == null || provider.isEmpty) {
         throw ArgumentError("auth.provider config is missing");
@@ -27,7 +28,7 @@ class _AuthPackage<TUser extends AuthUser, TResource, TLoginFlowListener>
 
       if (provider == "oauth2") {
         services.register(ServiceDescriptor.from<AuthProvider>(
-            create: (_) => OAuth2Provider<TUser, TResource>(),
+            create: (_) => OAuth2Provider<TUser, TResource>(scopes: scopes),
             name: "OAuth2Provider"));
       } else if (provider == "dummy") {
         services.register(ServiceDescriptor.from<AuthProvider>(

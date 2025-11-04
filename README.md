@@ -37,8 +37,12 @@ class MyUser extends AuthUser {
   final String id;
   final String name;
   final String email;
+  final String accessToken;
 
-  MyUser({required this.id, required this.name, required this.email});
+  MyUser({required this.id,
+    required this.name,
+    required this.email,
+    required this.accessToken});
 }
 ```
 
@@ -48,25 +52,44 @@ Register the auth package in your app's main function:
 
 ```dart
 import 'package:eni_auth/eni_auth.dart';
+import 'package:eni_auth/oauth2.dart';
+import 'package:eni_config/eni_config.dart';
 import 'package:eni_svc/eni_svc.dart';
+import 'package:eni_utils/logger.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(
-    ServiceScope(child: const MyApp())
-      ..addAuth<MyUser, String>(
-        controller: AuthController<MyUser, String>(
-          onCreateUser: (params) => MyUser(
-            id: params['sub'] ?? '',
-            name: params['name'] ?? '',
-            email: params['email'] ?? '',
+  runApp(ServiceScope(
+    builder: (context, bootstrapLevel) {
+      // Only show the app when services are ready
+      if (bootstrapLevel != RunLevel.ready) {
+        return const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
           ),
-          onLogin: (user) => print('User logged in: ${user.name}'),
-          onLogout: (user) => print('User logged out: ${user.name}'),
-          onGrantResource: (user, resource) => true, // Custom authorization logic
+        );
+      }
+
+      return MaterialApp(
+        title: 'ENI Auth Example',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          useMaterial3: true,
         ),
+        home: const AuthDemoScreen(title: 'ENI Auth Example'),
+      );
+    },
+  )
+    ..addAppConfig()
+    ..provide<ConfigProvider>(MemoryConfigProvider(config: config))
+    ..provide<Package>(
+      _AuthPackageProvider(
+        controller: authController,
+        autoConfigure: true,
       ),
-  );
+    ));
 }
 ```
 
@@ -75,16 +98,18 @@ void main() {
 Add OAuth2 configuration to your app's configuration:
 
 ```dart
-final config = {
-  "auth": {
-    "provider": "oauth2",
-    "authorizationEndpoint": "https://your-auth-server.com/authorize",
-    "tokenEndpoint": "https://your-auth-server.com/token",
-    "clientId": "your-client-id",
-    "clientSecret": "your-client-secret", // Optional
-    "platform": {
-      "web": {"redirect_url": "/login/oidc/callback"},
-      "io": {"redirect_url": "http://localhost:9004/login/oidc/callback"}
+  final config = {
+  'auth': {
+    'provider': 'oauth2',
+    'authorizationEndpoint': 'https://accounts.google.com/o/oauth2/v2/auth',
+    'tokenEndpoint': 'https://oauth2.googleapis.com/token',
+    'clientId': '<YOUR_CLIENT_ID>',
+    'clientSecret': '<YOUT_CLIENT_SECRET>',
+    'scopes': ['openid', 'profile', 'email'],
+    'platform': {
+      //overwrites default values from default_config.dart (mostly not necessary):
+      //'web': {'redirect_url': '/login/oidc/callback'},
+      //'io':  {'redirect_url': 'http://localhost:9004/login/oidc/callback'}
     }
   }
 };
@@ -95,30 +120,117 @@ final config = {
 Use the `AuthBuilder` widget to conditionally render UI based on authentication state:
 
 ```dart
-import 'package:eni_auth/eni_auth.dart';
-import 'package:flutter/material.dart';
+class AuthDemoScreen extends StatefulWidget {
+  const AuthDemoScreen({super.key, required this.title});
 
-class MyHomePage extends StatelessWidget {
+  final String title;
+
+  @override
+  State<AuthDemoScreen> createState() => _AuthDemoScreenState();
+}
+
+class _AuthDemoScreenState extends State<AuthDemoScreen> {
+  bool _isLoading = false;
+
+  // Create a logger instance for this class
+  final Logger _logger = loggerFor('AuthDemoScreen');
+
+  /// Handle the login button press.
+  ///
+  /// This method calls the login method on the AuthService and
+  /// shows a loading indicator while the login is in progress.
+  Future<void> _handleLogin(BuildContext context) async {
+    // Store a reference to the ScaffoldMessengerState before the async gap
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final success = await context.auth.login();
+      if (!success) {
+        _logger.w('Login failed');
+        if (mounted) {
+          // Use the stored reference instead of accessing through context
+          scaffoldMessenger.showSnackBar(
+            const SnackBar(content: Text('Login failed')),
+          );
+        }
+      }
+    } catch (e) {
+      _logger.e('Error during login: $e');
+      if (mounted) {
+        // Use the stored reference instead of accessing through context
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Handle the logout button press.
+  ///
+  /// This method calls the logout method on the AuthService.
+  Future<void> _handleLogout(BuildContext context) async {
+    await context.auth.logout();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('My App')),
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
       body: Center(
-        child: AuthBuilder<MyUser>(
+        child: _isLoading
+            ? const CircularProgressIndicator()
+            : AuthBuilder<MyUser>(
           builder: (context, user) {
             if (user == null) {
-              return ElevatedButton(
-                onPressed: () => context.auth.login(),
-                child: Text('Login'),
-              );
-            } else {
+              // User is not authenticated
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Welcome, ${user.name}!'),
+                  const Text(
+                    'You are not logged in',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () => context.auth.logout(),
-                    child: Text('Logout'),
+                    onPressed: () => _handleLogin(context),
+                    child: const Text('Login'),
+                  ),
+                ],
+              );
+            } else {
+              // User is authenticated
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'You are logged in as:',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    user.name,
+                    style: const TextStyle(
+                        fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    user.email,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () => _handleLogout(context),
+                    child: const Text('Logout'),
                   ),
                 ],
               );
@@ -136,41 +248,149 @@ class MyHomePage extends StatelessWidget {
 Access the auth service from any widget using the BuildContext extension:
 
 ```dart
-import 'package:eni_auth/eni_auth.dart';
-import 'package:flutter/material.dart';
+class AuthDemoScreen extends StatefulWidget {
+  const AuthDemoScreen({super.key, required this.title});
 
-class LoginLogoutExample extends StatelessWidget {
+  final String title;
+
+  @override
+  State<AuthDemoScreen> createState() => _AuthDemoScreenState();
+}
+
+class _AuthDemoScreenState extends State<AuthDemoScreen> {
+  bool _isLoading = false;
+
+  // Create a logger instance for this class
+  final Logger _logger = loggerFor('AuthDemoScreen');
+
+  /// Handle the login button press.
+  ///
+  /// This method calls the login method on the AuthService and
+  /// shows a loading indicator while the login is in progress.
+  Future<void> _handleLogin(BuildContext context) async {
+    // Store a reference to the ScaffoldMessengerState before the async gap
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final success = await context.auth.login();
+      if (!success) {
+        _logger.w('Login failed');
+        if (mounted) {
+          // Use the stored reference instead of accessing through context
+          scaffoldMessenger.showSnackBar(
+            const SnackBar(content: Text('Login failed')),
+          );
+        }
+      }
+    } catch (e) {
+      _logger.e('Error during login: $e');
+      if (mounted) {
+        // Use the stored reference instead of accessing through context
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Handle the logout button press.
+  ///
+  /// This method calls the logout method on the AuthService.
+  Future<void> _handleLogout(BuildContext context) async {
+    await context.auth.logout();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Trigger login
-        ElevatedButton(
-          onPressed: () async {
-            final success = await context.auth.login();
-            if (success) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Login successful')),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: _isLoading
+            ? const CircularProgressIndicator()
+            : AuthBuilder<MyUser>(
+          builder: (context, user) {
+            if (user == null) {
+              // User is not authenticated
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'You are not logged in',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () => _handleLogin(context),
+                    child: const Text('Login'),
+                  ),
+                ],
+              );
+            } else {
+              // User is authenticated
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'You are logged in as:',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    user.name,
+                    style: const TextStyle(
+                        fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    user.email,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () => _handleLogout(context),
+                    child: const Text('Logout'),
+                  ),
+                ],
               );
             }
           },
-          child: Text('Login'),
         ),
-        
-        // Trigger logout
-        ElevatedButton(
-          onPressed: () async {
-            await context.auth.logout();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Logged out')),
-            );
-          },
-          child: Text('Logout'),
-        ),
-      ],
+      ),
     );
   }
 }
+```
+
+### 6. Use AuthController for further processing
+Define an `AuthController` to handle user creation, login, logout, and resource access control:  
+```dart
+final authController = () {
+  final logger = loggerFor('AuthController');
+
+  return AuthController<MyUser, BuildContext>(
+    onCreateUser: MyUser.fromOAuth2,
+    onLogin: (user) {
+      logger.i('User logged in: $user');
+    },
+    onLogout: (user) {
+      logger.i('User logged out: $user');
+    },
+    onGrantResource: (user, resource) {
+      // Custom resource access control
+      return true;
+    },
+  );
+}();
 ```
 
 ## Architecture

@@ -1,6 +1,6 @@
 name: eni_auth
 description: "A flexible authentication framework for Flutter applications supporting OAuth2, secure credential storage, and cross-platform authentication flows for web and desktop."
-version: 2.0.4
+version: 2.0.5
 homepage: https://eniware-systems.de
 publish_to: https://gitea.eniware-systems.de/api/packages/eni-flutter/pub
 
@@ -23,7 +23,7 @@ dependencies:
   eni_config:
     git:
       url: https://github.com/eniware-systems/eni_config.git
-      ref: 2.0.5
+      ref: 2.0.6
   
   oauth2: ^2.0.3
   url_launcher: ^6.3.2

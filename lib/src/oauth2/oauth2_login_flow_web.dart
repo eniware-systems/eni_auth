@@ -16,7 +16,7 @@ Future<Map<String, String>> _awaitAuthenticationResponse() {
   // listener to receive the query parameters forwarded from callback.html.
   final responseStreamController = StreamController<Map<String, String>>();
 
-  // Support for BroadcastChannel
+  // Support for BroadcastChannel (for communication between browser tabs)
   html.BroadcastChannel("eni-auth").onMessage.listen((event) {
     final data = event.data.toString();
 
@@ -24,7 +24,7 @@ Future<Map<String, String>> _awaitAuthenticationResponse() {
     responseStreamController.add(responseUri.queryParameters);
   });
 
-  // Support for window.opener as a fallback
+  // Support for window.opener as a fallback (when BroadcastChannel is not supported)
   html.window.onMessage.listen((event) {
     try {
       const prefix = "eni-auth=";
@@ -107,8 +107,10 @@ CancelableOperation<Client?> loginFlow({
 Future loginInit({required Map<String, dynamic> config}) async {
   var redirectUrl = _getRedirectUrl(config);
 
-  if (Uri.base.path == redirectUrl.path) {
-    final redirectUrl = Uri.base.replace(path: _redirectRealPath);
+  if (Uri.base.host == redirectUrl.host &&
+      Uri.base.port == redirectUrl.port &&
+      Uri.base.path == redirectUrl.path) {
+    redirectUrl = Uri.base.replace(path: _redirectRealPath);
 
     html.window.location.href = redirectUrl.toString();
 
